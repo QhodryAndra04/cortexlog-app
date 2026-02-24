@@ -2,20 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { loginUser } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  // Validasi format email
-  const isValidEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,33 +18,35 @@ export default function LoginPage() {
     setIsLoading(true);
 
     // Validasi input
-    if (!email || !password) {
-      setError("Email dan password harus diisi");
-      setIsLoading(false);
-      return;
-    }
-
-    // Validasi format email
-    if (!isValidEmail(email)) {
-      setError("Format email tidak valid");
+    if (!username || !password) {
+      setError("Username dan password harus diisi");
       setIsLoading(false);
       return;
     }
 
     // Validasi panjang password
-    if (password.length < 6) {
-      setError("Password minimal 6 karakter");
+    if (password.length < 3) {
+      setError("Password minimal 3 karakter");
       setIsLoading(false);
       return;
     }
 
-    // Simulasi login dengan delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // Call backend login API
+      const data = await loginUser(username, password);
 
-    // Login berhasil
-    localStorage.setItem("isLoggedIn", "true");
-    localStorage.setItem("email", email);
-    router.push("/dashboard");
+      if (data.token && data.user) {
+        // Token sudah disimpan di localStorage oleh loginUser
+        setError("");
+        // Redirect ke dashboard
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 500);
+      }
+    } catch (err) {
+      setError(err.message || "Login gagal, silahkan coba lagi");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -163,26 +160,26 @@ export default function LoginPage() {
 
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Email Input */}
+              {/* Username Input */}
               <div>
                 <label
                   className="block text-xs font-semibold mb-2"
                   style={{ color: "#a0a0a0" }}
                 >
-                  EMAIL ADMINISTRATOR
+                  NAMA PENGGUNA
                 </label>
                 <div className="relative">
                   <div
                     className="absolute inset-y-0 left-0 flex items-center pl-3"
                     style={{ color: "#64748b" }}
                   >
-                    ✉️
+                    👤
                   </div>
                   <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Masukkan email administrator"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Masukkan nama pengguna"
                     disabled={isLoading}
                     className="w-full pl-10 pr-4 py-2.5 rounded transition-colors text-sm"
                     style={{

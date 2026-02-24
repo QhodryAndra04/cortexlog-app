@@ -7,7 +7,7 @@ export default function UserFormModal({ isOpen, isEditing, user, onSubmit, onCan
     username: '',
     email: '',
     fullName: '',
-    role: 'analyst',
+    role: 'admin',
     password: '',
     confirmPassword: '',
     requirePasswordChange: true,
@@ -34,7 +34,7 @@ export default function UserFormModal({ isOpen, isEditing, user, onSubmit, onCan
         username: '',
         email: '',
         fullName: '',
-        role: 'analyst',
+        role: 'admin',
         password: '',
         confirmPassword: '',
         requirePasswordChange: true,
@@ -209,20 +209,7 @@ export default function UserFormModal({ isOpen, isEditing, user, onSubmit, onCan
                   </div>
                 </label>
 
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="role"
-                    value="analyst"
-                    checked={formData.role === 'analyst'}
-                    onChange={handleChange}
-                    className="w-4 h-4 cursor-pointer"
-                  />
-                  <div>
-                    <span className="text-slate-400 font-semibold">📊 Analis Keamanan</span>
-                    <p className="text-slate-500 text-xs">Akses baca-saja ke laporan & log</p>
-                  </div>
-                </label>
+
               </div>
             </div>
 

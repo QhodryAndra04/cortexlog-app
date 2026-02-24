@@ -11,8 +11,6 @@ export default function UserTable({ users, onEdit, onResetPassword, onDelete }) 
         return 'bg-yellow-900/30 text-yellow-400 border border-yellow-700';
       case 'admin':
         return 'bg-blue-900/30 text-blue-400 border border-blue-700';
-      case 'analyst':
-        return 'bg-slate-800 text-slate-300 border border-slate-700';
       default:
         return 'bg-slate-800 text-slate-300 border border-slate-700';
     }
@@ -24,8 +22,6 @@ export default function UserTable({ users, onEdit, onResetPassword, onDelete }) 
         return '🔱 Super Admin';
       case 'admin':
         return '👤 Admin';
-      case 'analyst':
-        return '📊 Analis Keamanan';
       default:
         return role;
     }

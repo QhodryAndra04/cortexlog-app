@@ -114,7 +114,7 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}
-                          d="M9 5l7 7-7 7"po
+                          d="M9 5l7 7-7 7"
                         />
                       </svg>
                     </td>
