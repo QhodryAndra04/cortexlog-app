@@ -19,10 +19,16 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="h-screen w-screen overflow-hidden">
+    <html lang="id" className="h-screen w-screen overflow-hidden">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen w-screen m-0 p-0 overflow-hidden`}
       >
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-semibold"
+        >
+          Lewati ke konten utama
+        </a>
         <div className="h-screen w-screen overflow-y-auto flex flex-col">
           {children}
         </div>

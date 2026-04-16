@@ -1,160 +1,37 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import LogsTable from "@/app/components/LogsTable";
 import * as XLSX from "xlsx";
 
-// Expanded sample log data with more variety
-const SAMPLE_LOGS = [
-  {
-    id: 1,
-    timestamp: "2024-02-20T14:30:05.123Z",
-    level: "critical",
-    source: "203.0.113.45",
-    method: "GET",
-    path: "/search?q=union+select",
-    statusCode: 400,
-    userAgent: "sqlmap/1.0",
-    responseSize: 234,
-    attackType: "SQL Injection",
-    confidence: 98.5,
-    fullLog: '203.0.113.45 - - [20/Feb/2024:14:30:05 +0000] "GET /search?q=union+select HTTP/1.1" 400 234 "-" "sqlmap/1.0"'
-  },
-  {
-    id: 2,
-    timestamp: "2024-02-20T14:31:12.456Z",
-    level: "info",
-    source: "192.168.1.100",
-    method: "GET",
-    path: "/",
-    statusCode: 200,
-    userAgent: "Mozilla/5.0",
-    responseSize: 1234,
-    attackType: "Normal",
-    confidence: 0,
-    fullLog: '192.168.1.100 - - [20/Feb/2024:14:31:12 +0000] "GET / HTTP/1.1" 200 1234 "-" "Mozilla/5.0"'
-  },
-  {
-    id: 3,
-    timestamp: "2024-02-20T14:32:45.789Z",
-    level: "critical",
-    source: "198.51.100.22",
-    method: "GET",
-    path: "/api/user?id=1 OR 1=1",
-    statusCode: 400,
-    userAgent: "Python-urllib/3.8",
-    responseSize: 245,
-    attackType: "SQL Injection",
-    confidence: 95.2,
-    fullLog: '198.51.100.22 - - [20/Feb/2024:14:32:45 +0000] "GET /api/user?id=1 OR 1=1 HTTP/1.1" 400 245 "-" "Python-urllib/3.8"'
-  },
-  {
-    id: 4,
-    timestamp: "2024-02-20T14:33:22.012Z",
-    level: "warning",
-    source: "192.168.1.50",
-    method: "POST",
-    path: "/admin",
-    statusCode: 403,
-    userAgent: "curl/7.68.0",
-    responseSize: 189,
-    attackType: "Brute Force",
-    confidence: 87.3,
-    fullLog: '192.168.1.50 - - [20/Feb/2024:14:33:22 +0000] "POST /admin HTTP/1.1" 403 189 "-" "curl/7.68.0"'
-  },
-  {
-    id: 5,
-    timestamp: "2024-02-20T14:34:08.345Z",
-    level: "critical",
-    source: "203.0.113.78",
-    method: "GET",
-    path: "/profile?id=<script>alert(1)</script>",
-    statusCode: 400,
-    userAgent: "Mozilla/5.0",
-    responseSize: 267,
-    attackType: "XSS",
-    confidence: 92.1,
-    fullLog: '203.0.113.78 - - [20/Feb/2024:14:34:08 +0000] "GET /profile?id=<script>alert(1)</script> HTTP/1.1" 400 267 "-" "Mozilla/5.0"'
-  },
-  {
-    id: 6,
-    timestamp: "2024-02-20T14:35:33.678Z",
-    level: "info",
-    source: "192.168.1.200",
-    method: "GET",
-    path: "/dashboard",
-    statusCode: 200,
-    userAgent: "Mozilla/5.0",
-    responseSize: 4567,
-    attackType: "Normal",
-    confidence: 0,
-    fullLog: '192.168.1.200 - - [20/Feb/2024:14:35:33 +0000] "GET /dashboard HTTP/1.1" 200 4567 "-" "Mozilla/5.0"'
-  },
-  {
-    id: 7,
-    timestamp: "2024-02-20T14:36:15.901Z",
-    level: "critical",
-    source: "192.168.1.30",
-    method: "GET",
-    path: "/upload?file=../../etc/passwd",
-    statusCode: 400,
-    userAgent: "curl/7.68.0",
-    responseSize: 145,
-    attackType: "Path Traversal",
-    confidence: 88.7,
-    fullLog: '192.168.1.30 - - [20/Feb/2024:14:36:15 +0000] "GET /upload?file=../../etc/passwd HTTP/1.1" 400 145 "-" "curl/7.68.0"'
-  },
-  {
-    id: 8,
-    timestamp: "2024-02-20T14:37:42.234Z",
-    level: "warning",
-    source: "203.0.113.99",
-    method: "POST",
-    path: "/login",
-    statusCode: 401,
-    userAgent: "Mozilla/5.0",
-    responseSize: 289,
-    attackType: "Brute Force",
-    confidence: 81.5,
-    fullLog: '203.0.113.99 - - [20/Feb/2024:14:37:42 +0000] "POST /login HTTP/1.1" 401 289 "-" "Mozilla/5.0"'
-  },
-  {
-    id: 9,
-    timestamp: "2024-02-20T14:38:56.567Z",
-    level: "info",
-    source: "192.168.1.75",
-    method: "GET",
-    path: "/static/js/app.js",
-    statusCode: 200,
-    userAgent: "Mozilla/5.0",
-    responseSize: 123456,
-    attackType: "Normal",
-    confidence: 0,
-    fullLog: '192.168.1.75 - - [20/Feb/2024:14:38:56 +0000] "GET /static/js/app.js HTTP/1.1" 200 123456 "-" "Mozilla/5.0"'
-  },
-  {
-    id: 10,
-    timestamp: "2024-02-20T14:39:11.890Z",
-    level: "critical",
-    source: "198.51.100.99",
-    method: "GET",
-    path: "/search?q=exec()",
-    statusCode: 400,
-    userAgent: "wget/1.20.3",
-    responseSize: 312,
-    attackType: "Code Injection",
-    confidence: 93.8,
-    fullLog: '198.51.100.99 - - [20/Feb/2024:14:39:11 +0000] "GET /search?q=exec() HTTP/1.1" 400 312 "-" "wget/1.20.3"'
-  },
-];
-
 export default function ThreatHuntingPage() {
+  const [logs, setLogs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedRows, setExpandedRows] = useState({});
 
+  const fetchLogs = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/threat-hunting");
+      if (!res.ok) throw new Error("Gagal mengambil data log");
+      const data = await res.json();
+      setLogs(data.data || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
   // Filter logs based on query
   const filteredLogs = useMemo(() => {
-    let filtered = SAMPLE_LOGS;
+    let filtered = logs;
 
     // Apply search query
     if (searchQuery.trim()) {
@@ -172,7 +49,7 @@ export default function ThreatHuntingPage() {
     }
 
     return filtered;
-  }, [searchQuery]);
+  }, [searchQuery, logs]);
 
 
 
@@ -206,7 +83,7 @@ export default function ThreatHuntingPage() {
   }, [filteredLogs]);
 
   return (
-    <div style={{ backgroundColor: '#151719' }}>
+    <div className="bg-[#151719]">
 
       {/* Main Content */}
       <div className="px-6 py-6 space-y-6">
@@ -215,37 +92,50 @@ export default function ThreatHuntingPage() {
         <div className="space-y-4">
           {/* Query Input */}
           <div>
+            <label htmlFor="threat-search" className="sr-only">Cari log</label>
             <input
+              id="threat-search"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari log... (cth: SQL Injection, path, IP address)"
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none font-mono text-sm"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 font-mono text-sm transition"
             />
           </div>
 
           {/* Toolbar */}
           <div className="flex justify-between items-center">
-            <div className="text-sm text-slate-400">
-              Menampilkan {filteredLogs.length} dari {SAMPLE_LOGS.length} log
+            <div className="text-sm text-slate-400" aria-live="polite">
+              Menampilkan {filteredLogs.length} dari {logs.length} log
             </div>
             <div className="flex gap-2">
               <button
                 onClick={exportCSV}
-                className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 hover:border-slate-600 transition text-sm font-medium"
+                className="px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-300 hover:border-slate-600 transition text-sm font-medium inline-flex items-center gap-2"
               >
-                📊 Export Excel
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                Ekspor Excel
               </button>
             </div>
           </div>
         </div>
 
         {/* Logs Table */}
-        <LogsTable 
-          logs={filteredLogs} 
-          expandedRows={expandedRows} 
-          onToggleRow={setExpandedRows}
-        />
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20 text-slate-400">
+            Memuat data log dari database...
+          </div>
+        ) : error ? (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-lg flex justify-center">
+            {error}
+          </div>
+        ) : (
+          <LogsTable 
+            logs={filteredLogs} 
+            expandedRows={expandedRows} 
+            onToggleRow={setExpandedRows}
+          />
+        )}
       </div>
     </div>
   );

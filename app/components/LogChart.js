@@ -89,12 +89,12 @@ export default function LogChart({ logs }) {
     <div className="border border-slate-600 rounded-lg bg-slate-950">
       {/* Header */}
       <div className="border-b border-slate-600 p-4">
-        <h3 className="text-sm font-bold text-white">Security Events Evolution</h3>
+        <h3 className="text-sm font-bold text-white">Evolusi Peristiwa Keamanan</h3>
       </div>
 
       {/* Chart */}
       <div className="p-4 overflow-x-auto">
-        <svg width={width} height={height} className="min-w-full">
+        <svg width={width} height={height} className="min-w-full" role="img" aria-label="Grafik evolusi peristiwa keamanan menampilkan log normal dan anomali">
           {/* Grid lines */}
           {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => (
             <g key={`grid-${idx}`}>
@@ -260,11 +260,11 @@ export default function LogChart({ logs }) {
       <div className="flex items-center gap-6 p-4 border-t border-slate-600 text-xs">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-          <span className="text-slate-300">[Blue]</span>
+          <span className="text-slate-300">Log Normal</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-red-500"></div>
-          <span className="text-slate-300">[Red]</span>
+          <span className="text-slate-300">Anomali</span>
         </div>
       </div>
     </div>

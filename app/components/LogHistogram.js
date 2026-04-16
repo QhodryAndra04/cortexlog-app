@@ -49,8 +49,8 @@ export default function LogHistogram({ logs }) {
   return (
     <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-xl p-6">
       <div className="mb-4">
-        <h3 className="text-lg font-bold text-white mb-2">🔍 Timeline Log Volume</h3>
-        <p className="text-xs text-slate-400">Shows log volume distribution over the last 24 hours</p>
+        <h3 className="text-lg font-bold text-white mb-2">Timeline Volume Log</h3>
+        <p className="text-xs text-slate-400">Menampilkan distribusi volume log dalam 24 jam terakhir</p>
       </div>
 
       {/* Histogram */}
@@ -109,11 +109,11 @@ export default function LogHistogram({ logs }) {
       <div className="mt-4 flex gap-4 justify-center text-xs">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-red-600 rounded" />
-          <span className="text-slate-400">Critical</span>
+          <span className="text-slate-400">Kritikal</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-yellow-600 rounded" />
-          <span className="text-slate-400">Warning</span>
+          <span className="text-slate-400">Peringatan</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-blue-600 rounded" />
@@ -124,15 +124,15 @@ export default function LogHistogram({ logs }) {
       {/* Stats */}
       <div className="mt-4 grid grid-cols-3 gap-4 pt-4 border-t border-slate-700">
         <div>
-          <p className="text-xs text-slate-500 mb-1">Total Events</p>
+          <p className="text-xs text-slate-500 mb-1">Total Peristiwa</p>
           <p className="text-lg font-bold text-slate-200">{logs.length}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-500 mb-1">Critical Events</p>
+          <p className="text-xs text-slate-500 mb-1">Peristiwa Kritikal</p>
           <p className="text-lg font-bold text-red-400">{logs.filter(l => l.level === 'critical').length}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-500 mb-1">Warning Events</p>
+          <p className="text-xs text-slate-500 mb-1">Peristiwa Peringatan</p>
           <p className="text-lg font-bold text-yellow-400">{logs.filter(l => l.level === 'warning').length}</p>
         </div>
       </div>

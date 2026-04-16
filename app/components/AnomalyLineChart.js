@@ -15,7 +15,7 @@ const Chart = dynamic(
   },
 );
 
-export default function AnomalyLineChart({ logs }) {
+export default function AnomalyLineChart({ logs, dbTimeline }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -38,45 +38,35 @@ export default function AnomalyLineChart({ logs }) {
     }
 
     // Distribute logs across time slots
-    if (logs && logs.length > 0) {
+    // Jika mendapat data langsung dari database
+    if (dbTimeline && dbTimeline.length > 0) {
+      dbTimeline.forEach((t) => {
+        // Asumsi time format: '2024-02-05T10:00:00.000Z'
+        const time = new Date(t.hour_bucket);
+        const hours = time.getHours();
+        const timeKey = `${String(hours).padStart(2, "0")}:00`;
+        
+        if (timeSlots[timeKey]) {
+          timeSlots[timeKey].normal = parseInt(t.normals, 10);
+          timeSlots[timeKey].critical = parseInt(t.anomalies, 10);
+        }
+      });
+    } else if (logs && logs.length > 0) {
+      // Logic lama (fallback) untuk parsing mock logs
       logs.forEach((log, idx) => {
-        // Distribute logs evenly across time slots
         const slotIndex = Math.floor(
           ((idx % logs.length) * categories.length) / Math.max(logs.length, 6),
         );
         const timeKey = categories[Math.min(slotIndex, categories.length - 1)];
 
-        // Categorize by level - extract from log object or parse Apache log format
         let level = "normal";
-        
         if (typeof log === "object" && log.level) {
           level = log.level;
         } else if (typeof log === "string") {
-          // Parse Apache log format to extract HTTP status code
-          // Format: "IP - - [date] "METHOD path HTTP/1.x" STATUS_CODE response_size"
           const statusMatch = log.match(/"\s+(\d{3})\s+/);
           if (statusMatch) {
             const statusCode = parseInt(statusMatch[1]);
-            
-            // Determine level based on HTTP status code and log content
-            if (statusCode >= 400 && statusCode < 500) {
-              // Client errors (400-499) = warning
-              level = "warning";
-            } else if (statusCode >= 500) {
-              // Server errors (500-599) = critical
-              level = "critical";
-            }
-            
-            // Check for attack patterns in the log
-            if (
-              log.includes("injection") ||
-              log.includes("union") ||
-              log.includes("select") ||
-              log.includes("script") ||
-              log.includes("etc/passwd") ||
-              log.includes("sqlmap") ||
-              log.includes("DDoS")
-            ) {
+            if (statusCode >= 500 || ((statusCode >= 400) && (log.includes("injection") || log.includes("union")))) {
               level = "critical";
             }
           }
@@ -84,40 +74,29 @@ export default function AnomalyLineChart({ logs }) {
 
         if (level === "critical") {
           timeSlots[timeKey].critical++;
-        } else if (level === "warning") {
-          timeSlots[timeKey].warning++;
         } else {
           timeSlots[timeKey].normal++;
         }
       });
     } else {
-      // Default data when no logs
-      timeSlots[categories[0]] = { normal: 15, warning: 1, critical: 0 };
-      timeSlots[categories[1]] = { normal: 20, warning: 2, critical: 0 };
-      timeSlots[categories[2]] = { normal: 25, warning: 3, critical: 1 };
-      timeSlots[categories[3]] = { normal: 22, warning: 2, critical: 1 };
-      timeSlots[categories[4]] = { normal: 28, warning: 4, critical: 1 };
-      timeSlots[categories[5]] = { normal: 30, warning: 3, critical: 2 };
+      // Default jika tidak ada data
+      timeSlots[categories[0]] = { normal: 0, warning: 0, critical: 0 };
     }
 
     return {
       series: [
         {
-          name: "Normal Logs",
+          name: "Normal (Isolation Forest)",
           data: categories.map((cat) => timeSlots[cat].normal),
         },
         {
-          name: "Warning",
-          data: categories.map((cat) => timeSlots[cat].warning),
-        },
-        {
-          name: "Anomalies Detected",
+          name: "Anomali (Isolation Forest)",
           data: categories.map((cat) => timeSlots[cat].critical),
         },
       ],
       categories,
     };
-  }, [logs]);
+  }, [logs, dbTimeline]);
 
   const options = {
     chart: {
@@ -134,7 +113,7 @@ export default function AnomalyLineChart({ logs }) {
         speed: 800,
       },
     },
-    colors: ["#0ea5e9", "#f59e0b", "#ef4444"],
+    colors: ["#0ea5e9", "#ef4444"],
     dataLabels: {
       enabled: false,
     },
@@ -191,7 +170,7 @@ export default function AnomalyLineChart({ logs }) {
   };
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full" role="img" aria-label="Grafik tren anomali dari waktu ke waktu">
       {mounted && (
         <Chart
           options={options}

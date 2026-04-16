@@ -1,3 +1,5 @@
+'use server';
+
 import { query } from '@/lib/db';
 import { comparePassword, generateToken } from '@/lib/auth';
 
@@ -19,13 +21,13 @@ export async function POST(request) {
     let users;
     try {
       users = await query(
-        'SELECT * FROM users WHERE username = ?',
+        'SELECT id_user, username, email, password, role, status, created_at FROM users WHERE username = $1',
         [username]
       );
     } catch (dbError) {
       console.error('Database query error:', dbError);
       return Response.json(
-        { error: 'Gagal terhubung ke database. Pastikan MySQL sudah running dan database sudah dibuat.' },
+        { error: 'Gagal terhubung ke database. Pastikan PostgreSQL sudah running dan database sudah dibuat.' },
         { status: 500 }
       );
     }
@@ -50,7 +52,7 @@ export async function POST(request) {
     }
 
     // Generate JWT token
-    const token = generateToken(user.id, user.email, user.username);
+    const token = generateToken(user.id_user, user.email, user.username);
 
     // Return success response
     return Response.json(
@@ -58,11 +60,11 @@ export async function POST(request) {
         message: 'Login berhasil',
         token: token,
         user: {
-          id: user.id,
+          id: user.id_user,
           username: user.username,
           email: user.email,
-          fullname: user.fullname,
           role: user.role,
+          status: user.status,
         },
       },
       { status: 200 }

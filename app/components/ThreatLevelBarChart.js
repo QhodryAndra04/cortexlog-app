@@ -19,11 +19,11 @@ export default function ThreatLevelBarChart({ lowCount, mediumCount, highCount, 
     return {
       series: [
         {
-          name: 'Threat Count',
+          name: 'Jumlah Ancaman',
           data: [lowCount, mediumCount, highCount, criticalCount],
         },
       ],
-      categories: ['Low', 'Medium', 'High', 'Critical'],
+      categories: ['Rendah', 'Sedang', 'Tinggi', 'Kritis'],
     };
   }, [lowCount, mediumCount, highCount, criticalCount]);
 
@@ -93,7 +93,7 @@ export default function ThreatLevelBarChart({ lowCount, mediumCount, highCount, 
   const colors = ['#22c55e', '#f59e0b', '#ef4444', '#dc2626'];
   const newOptions = { ...options, colors };
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full" role="img" aria-label="Grafik batang level ancaman">
       {mounted && (
         <Chart
           options={newOptions}

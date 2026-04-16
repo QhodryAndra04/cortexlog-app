@@ -1,3 +1,5 @@
+'use server';
+
 import { query } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 
@@ -5,7 +7,7 @@ export async function GET(request) {
   try {
     // Get all users
     const users = await query(
-      'SELECT id, username, email, fullname, role, is_active, created_at, updated_at FROM users ORDER BY created_at DESC'
+      'SELECT id_user, username, email, role, status, created_at FROM users ORDER BY created_at DESC'
     );
 
     return Response.json({
@@ -24,19 +26,27 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { username, email, password, fullname, role } = await request.json();
+    const { username, email, password, role } = await request.json();
 
     // Validasi input
-    if (!username || !email || !password || !fullname || !role) {
+    if (!username || !email || !password || !role) {
       return Response.json(
-        { error: 'Semua field harus diisi' },
+        { error: 'Semua field (username, email, password, role) harus diisi' },
+        { status: 400 }
+      );
+    }
+
+    // Validasi role
+    if (!['super_admin', 'admin'].includes(role)) {
+      return Response.json(
+        { error: 'Role harus super_admin atau admin' },
         { status: 400 }
       );
     }
 
     // Cek apakah username atau email sudah ada
     const existingUsers = await query(
-      'SELECT id FROM users WHERE username = ? OR email = ?',
+      'SELECT id_user FROM users WHERE username = $1 OR email = $2',
       [username, email]
     );
 
@@ -52,19 +62,21 @@ export async function POST(request) {
 
     // Insert user baru
     const result = await query(
-      'INSERT INTO users (username, email, password, fullname, role, is_active, created_at) VALUES (?, ?, ?, ?, ?, 1, NOW())',
-      [username, email, hashedPassword, fullname, role]
+      'INSERT INTO users (username, email, password, role, status, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id_user',
+      [username, email, hashedPassword, role, 'Aktif']
     );
+
+    const newUserId = result[0].id_user;
 
     return Response.json({
       success: true,
       message: 'User berhasil dibuat',
       data: {
-        id: result.insertId,
+        id: newUserId,
         username,
         email,
-        fullname,
         role,
+        status: 'Aktif',
       },
     }, { status: 201 });
   } catch (error) {

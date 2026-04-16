@@ -25,27 +25,40 @@ export default function StatCard({ title, value, icon, trend, trendValue, color 
     purple: "border-purple-600 hover:border-purple-500",
   };
 
+  const trendIcon = (dir) => {
+    switch (dir) {
+      case 'up':
+        return (<svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17l9.2-9.2M17 17V7H7" /></svg>);
+      case 'down':
+        return (<svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 7l-9.2 9.2M7 7v10h10" /></svg>);
+      default:
+        return (<svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" /></svg>);
+    }
+  };
+
   return (
-    <div className={`bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-lg border ${borderColorClasses[color]} p-6 hover:shadow-2xl transition-all transform hover:-translate-y-1`}>
+    <div
+      className={`bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl shadow-lg border ${borderColorClasses[color]} p-6 hover:shadow-2xl transition-shadow`}
+      role="group"
+      aria-label={`${title}: ${value}`}
+    >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-slate-400 text-xs font-semibold uppercase tracking-widest">{title}</p>
           <p className={`text-4xl font-bold ${textColorClasses[color]} mt-3 mb-2`}>{value}</p>
           {trend && (
             <div className="flex items-center gap-1.5 mt-2">
+              {trendIcon(trend)}
               <span className={`text-sm font-medium ${
                 trend === "up" ? "text-green-400" : trend === "down" ? "text-red-400" : "text-slate-400"
               }`}>
-                {trend === "up" && "↗"}
-                {trend === "down" && "↘"}
-                {trend === "stable" && "→"}
                 {trendValue}
               </span>
               <span className="text-xs text-slate-500">vs kemarin</span>
             </div>
           )}
         </div>
-        <div className={`bg-gradient-to-br ${colorClasses[color]} text-white rounded-xl p-4 shadow-lg`}>
+        <div className={`bg-gradient-to-br ${colorClasses[color]} text-white rounded-xl p-4 shadow-lg`} aria-hidden="true">
           <div className="text-3xl">{icon}</div>
         </div>
       </div>

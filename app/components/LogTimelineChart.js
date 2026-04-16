@@ -73,15 +73,15 @@ export default function LogTimelineChart({ logs }) {
     return {
       series: [
         {
-          name: 'Normal Logs',
+          name: 'Log Normal',
           data: categories.map(cat => minuteBuckets[cat].normal),
         },
         {
-          name: 'Warning',
+          name: 'Peringatan',
           data: categories.map(cat => minuteBuckets[cat].warning),
         },
         {
-          name: 'Anomalies Detected',
+          name: 'Anomali Terdeteksi',
           data: categories.map(cat => minuteBuckets[cat].critical),
         },
       ],
@@ -153,7 +153,7 @@ export default function LogTimelineChart({ logs }) {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full" role="img" aria-label="Grafik timeline log per jam">
       {mounted && (
         <Chart
           options={options}

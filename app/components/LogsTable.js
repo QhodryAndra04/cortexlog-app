@@ -1,9 +1,18 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function LogsTable({ logs, expandedRows, onToggleRow }) {
   const [activeTab, setActiveTab] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [logs]);
+
+  const totalPages = Math.max(1, Math.ceil(logs.length / itemsPerPage));
+  const currentLogs = logs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const toggleRow = (id) => {
     onToggleRow((prev) => ({
@@ -22,8 +31,9 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
         return "#ef4444"; // red
       case "warning":
         return "#eab308"; // yellow
+      case "normal":
       case "info":
-        return "#0ea5e9"; // blue
+        return "#10b981"; // emerald/green for normal
       default:
         return "#64748b"; // slate
     }
@@ -35,8 +45,9 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
         return "bg-red-900/30";
       case "warning":
         return "bg-yellow-900/30";
+      case "normal":
       case "info":
-        return "bg-blue-900/30";
+        return "bg-emerald-900/30";
       default:
         return "bg-slate-900/30";
     }
@@ -48,8 +59,9 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
         return "bg-red-500 text-white";
       case "warning":
         return "bg-yellow-600 text-white";
+      case "normal":
       case "info":
-        return "bg-blue-500 text-white";
+        return "bg-emerald-500 text-white";
       default:
         return "bg-slate-600 text-white";
     }
@@ -59,23 +71,24 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
     <div className="rounded-lg border border-slate-700 overflow-hidden">
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm" role="table">
+          <caption className="sr-only">Tabel log keamanan</caption>
           <thead>
             <tr className="bg-slate-900 border-b border-slate-700">
-              <th className="px-4 py-3 text-left text-slate-300 font-semibold w-8"></th>
-              <th className="px-4 py-3 text-left text-slate-300 font-semibold min-w-32">
-                Time
+              <th scope="col" className="px-4 py-3 text-left text-slate-300 font-semibold w-8"><span className="sr-only">Perluas</span></th>
+              <th scope="col" className="px-4 py-3 text-left text-slate-300 font-semibold min-w-32">
+                Waktu
               </th>
-              <th className="px-4 py-3 text-left text-slate-300 font-semibold w-20">
+              <th scope="col" className="px-4 py-3 text-left text-slate-300 font-semibold w-20">
                 Level
               </th>
-              <th className="px-4 py-3 text-left text-slate-300 font-semibold min-w-32">
-                Source IP
+              <th scope="col" className="px-4 py-3 text-left text-slate-300 font-semibold min-w-32">
+                IP Sumber
               </th>
-              <th className="px-4 py-3 text-left text-slate-300 font-semibold min-w-40">
-                Event / Description
+              <th scope="col" className="px-4 py-3 text-left text-slate-300 font-semibold min-w-40">
+                Kejadian / Deskripsi
               </th>
-              <th className="px-4 py-3 text-left text-slate-300 font-semibold min-w-32">
+              <th scope="col" className="px-4 py-3 text-left text-slate-300 font-semibold min-w-32">
                 Serangan
               </th>
             </tr>
@@ -87,11 +100,11 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
                   colSpan="6"
                   className="px-4 py-8 text-center text-slate-500"
                 >
-                  No logs found matching the criteria
+                  Tidak ada log yang sesuai dengan kriteria
                 </td>
               </tr>
             ) : (
-              logs.map((log, index) => (
+              currentLogs.map((log, index) => (
                 <React.Fragment key={log.id}>
                   {/* Main Row */}
                   <tr
@@ -109,6 +122,7 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
+                        aria-hidden="true"
                       >
                         <path
                           strokeLinecap="round"
@@ -127,7 +141,7 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
                     {/* Level */}
                     <td className="px-4 py-3">
                       <span
-                        className={`px-2.5 py-1 rounded text-xs font-bold ${getLevelBadgeColor(log.level)}`}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold ${getLevelBadgeColor(log.level)}`}
                       >
                         {log.level.toUpperCase()}
                       </span>
@@ -135,7 +149,7 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
 
                     {/* Source IP */}
                     <td className="px-4 py-3">
-                      <span className="font-mono text-slate-300 bg-slate-800 px-2 py-1 rounded">
+                      <span className="font-mono text-slate-300 bg-slate-800 px-2 py-1 rounded-lg">
                         {log.source}
                       </span>
                     </td>
@@ -156,6 +170,12 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
                             {log.attackType}
                           </span>
                         </div>
+                      ) : log.isAnomaly ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-yellow-500">
+                            Anomali
+                          </span>
+                        </div>
                       ) : (
                         <span className="text-xs text-slate-500">-</span>
                       )}
@@ -172,8 +192,12 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
                         className="px-4 py-4 border-b border-slate-700"
                       >
                         {/* Tab Navigation */}
-                        <div className="flex gap-4 mb-4 border-b border-slate-700">
+                        <div className="flex gap-4 mb-4 border-b border-slate-700" role="tablist" aria-label="Tampilan detail log">
                           <button
+                            role="tab"
+                            aria-selected={(activeTab[log.id] || "table") === "table"}
+                            aria-controls={`tabpanel-table-${log.id}`}
+                            id={`tab-table-${log.id}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               setActiveTab((prev) => ({
@@ -187,9 +211,14 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
                                 : "border-transparent text-slate-400 hover:text-slate-300"
                             }`}
                           >
-                            📋 Table View
+                            <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                            Tampilan Tabel
                           </button>
                           <button
+                            role="tab"
+                            aria-selected={(activeTab[log.id] || "table") === "json"}
+                            aria-controls={`tabpanel-json-${log.id}`}
+                            id={`tab-json-${log.id}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               setActiveTab((prev) => ({
@@ -203,7 +232,8 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
                                 : "border-transparent text-slate-400 hover:text-slate-300"
                             }`}
                           >
-                            {} JSON
+                            <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+                            JSON
                           </button>
                         </div>
 
@@ -211,10 +241,10 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
                         <div onClick={(e) => e.stopPropagation()}>
                           {(activeTab[log.id] || "table") === "table" ? (
                             // Table View
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                            <div role="tabpanel" id={`tabpanel-table-${log.id}`} aria-labelledby={`tab-table-${log.id}`} className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                               <div>
                                 <p className="text-slate-400 text-xs font-semibold mb-1">
-                                  Timestamp
+                                  Stempel Waktu
                                 </p>
                                 <p className="text-slate-200 font-mono">
                                   {new Date(log.timestamp).toLocaleString(
@@ -224,7 +254,7 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
                               </div>
                               <div>
                                 <p className="text-slate-400 text-xs font-semibold mb-1">
-                                  Source IP
+                                  IP Sumber
                                 </p>
                                 <p className="text-slate-200 font-mono">
                                   {log.source}
@@ -232,7 +262,7 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
                               </div>
                               <div>
                                 <p className="text-slate-400 text-xs font-semibold mb-1">
-                                  Method
+                                  Metode
                                 </p>
                                 <p className="text-slate-200 font-mono">
                                   {log.method}
@@ -270,20 +300,28 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
                                   {log.userAgent}
                                 </p>
                               </div>
-                              <div className="md:col-span-3">
+                              <div className="col-span-1">
                                 <p className="text-slate-400 text-xs font-semibold mb-1">
-                                  Jenis Serangan
+                                  Jenis Serangan / ML
                                 </p>
                                 <div className="flex items-center gap-2">
                                   <span className="text-slate-200 font-semibold">
-                                    {log.attackType}
+                                    {log.attackType !== "Normal" ? log.attackType : (log.isAnomaly ? "Anomali" : "Normal")}
                                   </span>
                                 </div>
+                              </div>
+                              <div className="col-span-1">
+                                <p className="text-slate-400 text-xs font-semibold mb-1">
+                                  Confidence / Anomaly Score
+                                </p>
+                                <p className="text-slate-200 font-mono">
+                                  Conf: {log.confidence}% | Score: {log.anomalyScore}
+                                </p>
                               </div>
                             </div>
                           ) : (
                             // JSON View
-                            <div className="bg-slate-900 border border-slate-700 rounded p-4 overflow-auto max-h-96">
+                            <div role="tabpanel" id={`tabpanel-json-${log.id}`} aria-labelledby={`tab-json-${log.id}`} className="bg-slate-900 border border-slate-700 rounded-lg p-4 overflow-auto max-h-96">
                               <pre className="text-slate-300 font-mono text-xs">
                                 {JSON.stringify(
                                   {
@@ -296,6 +334,8 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
                                     responseSize: log.responseSize,
                                     userAgent: log.userAgent,
                                     attackType: log.attackType,
+                                    isAnomaly: log.isAnomaly,
+                                    anomalyScore: log.anomalyScore,
                                     confidence: log.confidence,
                                     rawLog: log.fullLog,
                                   },
@@ -317,8 +357,32 @@ export default function LogsTable({ logs, expandedRows, onToggleRow }) {
       </div>
 
       {/* Pagination Info */}
-      <div className="bg-slate-900 border-t border-slate-700 px-4 py-3 text-sm text-slate-400">
-        Showing {logs.length} record{logs.length !== 1 ? "s" : ""}
+      <div className="bg-slate-900 border-t border-slate-700 px-4 py-3 flex flex-col sm:flex-row justify-between items-center text-sm text-slate-400 gap-4">
+        <div>
+          Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, logs.length)} dari {logs.length} data
+        </div>
+        
+        {totalPages > 1 && (
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1 bg-slate-800 border border-slate-700 rounded hover:bg-slate-700 disabled:opacity-50 transition"
+            >
+              Sebelumnya
+            </button>
+            <span className="font-medium text-slate-300">
+              Halaman {currentPage} dari {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 bg-slate-800 border border-slate-700 rounded hover:bg-slate-700 disabled:opacity-50 transition"
+            >
+              Selanjutnya
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

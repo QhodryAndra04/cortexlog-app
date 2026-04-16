@@ -1,3 +1,5 @@
+'use server';
+
 import { authenticateRequest } from '@/lib/middleware';
 
 export async function GET(request) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ConfirmationDialog from "./ConfirmationDialog";
 
 export default function TelegramSettings({ onClose }) {
@@ -18,6 +18,43 @@ export default function TelegramSettings({ onClose }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [testDialog, setTestDialog] = useState(false);
+  const modalRef = useRef(null);
+
+  // Escape key handler & focus trap
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+      // Focus trap
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    // Auto-focus modal
+    if (modalRef.current) {
+      const firstInput = modalRef.current.querySelector('input, button, select');
+      firstInput?.focus();
+    }
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   // Fetch settings on mount
   useEffect(() => {
@@ -70,7 +107,7 @@ export default function TelegramSettings({ onClose }) {
       if (result.success) {
         setTestResult({
           success: true,
-          message: "✓ Pengaturan tersimpan",
+          message: "Pengaturan tersimpan",
         });
         setTimeout(() => setTestResult(null), 3000);
       } else {
@@ -117,12 +154,12 @@ export default function TelegramSettings({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-700">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="telegram-settings-title">
+      <div ref={modalRef} className="bg-slate-900 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-700">
         {/* Header */}
         <div className="sticky top-0 bg-slate-900 border-b border-slate-700 p-6 flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold text-white">
+            <h2 id="telegram-settings-title" className="text-2xl font-bold text-white">
               Manajemen Telegram
             </h2>
             <p className="text-slate-400 text-sm mt-1">
@@ -131,9 +168,10 @@ export default function TelegramSettings({ onClose }) {
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white text-2xl"
+            className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-700/50 transition focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            aria-label="Tutup"
           >
-            ✕
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
@@ -141,8 +179,9 @@ export default function TelegramSettings({ onClose }) {
         <div className="p-6 space-y-6">
           {/* Error Alert */}
           {error && (
-            <div className="bg-red-900/30 border border-red-700 text-red-400 px-4 py-3 rounded text-sm">
-              ⚠️ {error}
+            <div className="bg-red-900/30 border border-red-700 text-red-400 px-4 py-3 rounded-lg text-sm flex items-center gap-2" role="alert">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+              <span>{error}</span>
             </div>
           )}
 
@@ -185,23 +224,30 @@ export default function TelegramSettings({ onClose }) {
 
                 {/* Bot Token */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">
+                  <label htmlFor="botToken" className="block text-sm font-semibold text-slate-300 mb-2">
                     Token Bot
                   </label>
                   <div className="flex gap-2">
                     <input
+                      id="botToken"
                       type={showToken ? "text" : "password"}
                       name="botToken"
                       value={settings.botToken}
                       onChange={handleChange}
-                      className="flex-1 px-4 py-2 bg-slate-950 border border-slate-600 text-white rounded focus:outline-none focus:border-blue-500 text-sm"
+                      className="flex-1 px-4 py-2 bg-slate-950 border border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 text-sm transition"
                       placeholder="Tempel token bot di sini"
+                      autoComplete="off"
                     />
                     <button
                       onClick={() => setShowToken(!showToken)}
-                      className="px-4 py-2 bg-slate-700 text-slate-300 rounded hover:bg-slate-600 transition text-sm whitespace-nowrap"
+                      className="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition text-sm whitespace-nowrap flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                      aria-label={showToken ? "Sembunyikan token" : "Tampilkan token"}
                     >
-                      {showToken ? "🙈 Sembunyikan" : "👁 Tampilkan"}
+                      {showToken ? (
+                        <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" /></svg> Sembunyikan</>
+                      ) : (
+                        <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg> Tampilkan</>
+                      )}
                     </button>
                   </div>
                   <p className="text-xs text-slate-500 mt-1">
@@ -213,16 +259,18 @@ export default function TelegramSettings({ onClose }) {
 
                 {/* Chat ID */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">
+                  <label htmlFor="chatId" className="block text-sm font-semibold text-slate-300 mb-2">
                     ID Chat (Grup Admin/Pribadi)
                   </label>
                   <input
+                    id="chatId"
                     type="text"
                     name="chatId"
                     value={settings.chatId}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 bg-slate-950 border border-slate-600 text-white rounded focus:outline-none focus:border-blue-500 text-sm"
+                    className="w-full px-4 py-2 bg-slate-950 border border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 text-sm transition"
                     placeholder="-1001234567890"
+                    autoComplete="off"
                   />
                   <p className="text-xs text-slate-500 mt-1">
                     Temukan ID chat Anda dengan{" "}
@@ -233,21 +281,22 @@ export default function TelegramSettings({ onClose }) {
 
                 {/* Alert Level */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">
+                  <label htmlFor="alertLevel" className="block text-sm font-semibold text-slate-300 mb-2">
                     Level Pemberitahuan (Kirim Pemberitahuan untuk:)
                   </label>
                   <select
+                    id="alertLevel"
                     name="alertLevel"
                     value={settings.alertLevel}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 bg-slate-950 border border-slate-600 text-white rounded focus:outline-none focus:border-blue-500 text-sm"
+                    className="w-full px-4 py-2 bg-slate-950 border border-slate-600 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 text-sm transition"
                   >
                     <option value="all">Semua Acara (Verbose)</option>
                     <option value="warning_critical">
-                      ⚠️ Peringatan & Kritis Saja (Disarankan)
+                      Peringatan & Kritis Saja (Disarankan)
                     </option>
                     <option value="critical">
-                      🔴 Hanya Kritis (Serangan berisiko tinggi)
+                      Hanya Kritis (Serangan berisiko tinggi)
                     </option>
                   </select>
                   <p className="text-xs text-slate-500 mt-1">
@@ -261,22 +310,30 @@ export default function TelegramSettings({ onClose }) {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="px-6 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition disabled:opacity-50"
+                  className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/40 flex items-center gap-2"
                 >
-                  {saving ? "⏳ Menyimpan..." : "Simpan Pengaturan"}
+                  {saving ? (
+                    <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg> Menyimpan...</>
+                  ) : "Simpan Pengaturan"}
                 </button>
                 <button
                   onClick={() => setTestDialog(true)}
                   disabled={testingConnection}
-                  className="px-6 py-2 bg-green-600 text-white font-semibold rounded hover:bg-green-700 transition disabled:opacity-50"
+                  className="px-6 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-green-500/40"
                 >
-                  UJI KONEKSI
+                  Uji Koneksi
                 </button>
                 {testResult && (
                   <div
                     className={`flex items-center gap-2 text-sm ${testResult.success ? "text-green-400" : "text-red-400"}`}
+                    role="status"
+                    aria-live="polite"
                   >
-                    <span>{testResult.success ? "✓" : "✗"}</span>
+                    {testResult.success ? (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    )}
                     <span>{testResult.message}</span>
                   </div>
                 )}
@@ -294,7 +351,7 @@ export default function TelegramSettings({ onClose }) {
         onConfirm={handleTestConnection}
         onCancel={() => setTestDialog(false)}
         isDanger={false}
-        confirmText={testingConnection ? "⏳ Menguji..." : "✓ Kirim Pesan Uji"}
+        confirmText={testingConnection ? "Menguji..." : "Kirim Pesan Uji"}
         confirmDisabled={testingConnection}
       />
     </div>

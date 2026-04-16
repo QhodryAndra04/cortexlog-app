@@ -2,6 +2,30 @@
 
 import { useState } from "react";
 
+// SVG icon components for cross-platform consistency
+const ChartIcon = () => (
+  <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+  </svg>
+);
+const PlayIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+const StopIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+  </svg>
+);
+const ClipboardIcon = () => (
+  <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+  </svg>
+);
+
 export default function LogInput({
   onStart,
   onStop,
@@ -34,33 +58,33 @@ export default function LogInput({
   });
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+    <div className="bg-slate-950 rounded-xl border border-slate-700">
       {/* Header */}
-      <div className="border-b border-gray-200 p-6 bg-gradient-to-r from-gray-50 to-gray-100">
+      <div className="border-b border-slate-700 p-6 bg-gradient-to-r from-slate-900 to-slate-800">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              <span className="text-2xl">📊</span>
+            <h3 className="text-2xl font-bold text-white flex items-center gap-3">
+              <ChartIcon />
               Aliran Log Real-time
             </h3>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-slate-400 mt-1">
               Monitoring aktivitas log secara langsung dengan deteksi anomali
             </p>
           </div>
           <div className="flex items-center gap-2">
             <div className={`px-3 py-1 rounded-full text-sm font-medium ${
               isSimulating 
-                ? "bg-green-100 text-green-700 animate-pulse" 
-                : "bg-gray-100 text-gray-600"
+                ? "bg-green-900/50 text-green-400 border border-green-700/50 animate-pulse" 
+                : "bg-slate-800 text-slate-400 border border-slate-600"
             }`}>
-              {isSimulating ? "● LIVE" : "● STOPPED"}
+              {isSimulating ? "● LIVE" : "● BERHENTI"}
             </div>
           </div>
         </div>
       </div>
 
       {/* Controls */}
-      <div className="p-6 border-b border-gray-200 bg-gray-50">
+      <div className="p-6 border-b border-slate-700 bg-slate-900/50">
         <div className="flex flex-wrap gap-4 items-center justify-between">
           <div className="flex gap-3">
             <button
@@ -68,11 +92,11 @@ export default function LogInput({
               disabled={isSimulating}
               className={`px-6 py-2.5 rounded-lg font-semibold transition-all flex items-center gap-2 ${
                 isSimulating
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
+                  ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+                  : "bg-green-600 hover:bg-green-700 text-white"
               }`}
             >
-              <span>▶</span>
+              <PlayIcon />
               <span>Mulai Streaming</span>
             </button>
             <button
@@ -80,44 +104,47 @@ export default function LogInput({
               disabled={!isSimulating}
               className={`px-6 py-2.5 rounded-lg font-semibold transition-all flex items-center gap-2 ${
                 !isSimulating
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                  : "bg-red-600 hover:bg-red-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
+                  ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+                  : "bg-red-600 hover:bg-red-700 text-white"
               }`}
             >
-              <span>⏹</span>
+              <StopIcon />
               <span>Berhenti</span>
             </button>
           </div>
 
           {/* Filters */}
           <div className="flex gap-2 items-center">
-            <span className="text-sm font-medium text-gray-700">Filter:</span>
+            <span className="text-sm font-medium text-slate-400">Filter:</span>
             <button
               onClick={() => setFilter("all")}
+              aria-pressed={filter === "all"}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                 filter === "all" 
                   ? "bg-blue-600 text-white" 
-                  : "bg-white text-gray-700 hover:bg-gray-100"
+                  : "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-600"
               }`}
             >
               Semua ({logs.length})
             </button>
             <button
               onClick={() => setFilter("normal")}
+              aria-pressed={filter === "normal"}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                 filter === "normal" 
                   ? "bg-green-600 text-white" 
-                  : "bg-white text-gray-700 hover:bg-gray-100"
+                  : "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-600"
               }`}
             >
               Normal
             </button>
             <button
               onClick={() => setFilter("anomaly")}
+              aria-pressed={filter === "anomaly"}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                 filter === "anomaly" 
                   ? "bg-red-600 text-white" 
-                  : "bg-white text-gray-700 hover:bg-gray-100"
+                  : "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-600"
               }`}
             >
               Anomali
@@ -127,23 +154,23 @@ export default function LogInput({
                 type="checkbox"
                 checked={autoScroll}
                 onChange={(e) => setAutoScroll(e.target.checked)}
-                className="w-4 h-4 text-blue-600"
+                className="w-4 h-4 text-blue-600 bg-slate-800 border-slate-600 rounded"
               />
-              <span className="text-sm text-gray-700">Gulir otomatis</span>
+              <span className="text-sm text-slate-400">Gulir otomatis</span>
             </label>
           </div>
         </div>
       </div>
 
       {/* Log Display */}
-      <div className="p-6 bg-gray-950 text-green-400 font-mono text-sm h-[500px] overflow-y-auto rounded-b-xl">
+      <div className="p-6 bg-[#0f1113] text-green-400 font-mono text-sm h-[500px] overflow-y-auto">
         {filteredLogs.length === 0 ? (
-          <div className="text-gray-500 text-center py-12">
-            <div className="text-4xl mb-4">📋</div>
-            <p className="text-lg">Tidak ada log yang sesuai filter</p>
+          <div className="text-slate-500 text-center py-12 flex flex-col items-center">
+            <ClipboardIcon />
+            <p className="text-lg mt-4">Tidak ada log yang sesuai filter</p>
             <p className="text-sm mt-2">
               {logs.length === 0 
-                ? "Klik 'Start Streaming' untuk memulai monitoring"
+                ? "Klik 'Mulai Streaming' untuk memulai monitoring"
                 : "Coba ubah filter untuk melihat log lainnya"
               }
             </p>
@@ -153,7 +180,7 @@ export default function LogInput({
             {filteredLogs.map((log, idx) => (
               <div
                 key={idx}
-                className={`whitespace-pre-wrap break-words py-1.5 px-2 rounded ${getLogClass(log)} hover:bg-gray-800/50 transition`}
+                className={`whitespace-pre-wrap break-words py-1.5 px-2 rounded ${getLogClass(log)} hover:bg-slate-800/50 transition`}
               >
                 {log}
               </div>
@@ -163,13 +190,13 @@ export default function LogInput({
       </div>
 
       {/* Stats Footer */}
-      <div className="border-t border-gray-200 px-6 py-3 bg-gray-50 rounded-b-xl">
+      <div className="border-t border-slate-700 px-6 py-3 bg-slate-900/50 rounded-b-xl">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-600">
-            Total Log: <span className="font-bold text-gray-800">{logs.length}</span>
+          <span className="text-slate-400">
+            Total Log: <span className="font-bold text-white">{logs.length}</span>
           </span>
-          <span className="text-gray-600">
-            Ditampilkan: <span className="font-bold text-gray-800">{filteredLogs.length}</span>
+          <span className="text-slate-400">
+            Ditampilkan: <span className="font-bold text-white">{filteredLogs.length}</span>
           </span>
         </div>
       </div>

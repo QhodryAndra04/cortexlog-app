@@ -1,13 +1,20 @@
+'use server';
+
+'use server';
+
 import { query } from '@/lib/db';
 
 export async function GET(request) {
   try {
+    // Get telegram settings dari telegram_settings table
     const results = await query(
-      'SELECT id, bot_token, chat_id, alert_level, is_enabled FROM telegram_settings LIMIT 1'
+      `SELECT id, bot_token, chat_id, alert_level, is_enabled 
+       FROM telegram_settings 
+       ORDER BY id DESC 
+       LIMIT 1`
     );
 
     if (!results || results.length === 0) {
-      // Return default if no settings exist
       return Response.json({
         success: true,
         data: {
@@ -28,7 +35,7 @@ export async function GET(request) {
         botToken: settings.bot_token,
         chatId: settings.chat_id,
         alertLevel: settings.alert_level,
-        enabled: settings.is_enabled === 1,
+        enabled: settings.is_enabled,
       },
     });
   } catch (error) {
@@ -52,7 +59,7 @@ export async function PUT(request) {
       );
     }
 
-    // Update or insert settings
+    // Check if settings exist
     const checkResults = await query(
       'SELECT id FROM telegram_settings LIMIT 1'
     );
@@ -60,14 +67,17 @@ export async function PUT(request) {
     if (checkResults.length === 0) {
       // Insert new settings
       await query(
-        'INSERT INTO telegram_settings (bot_token, chat_id, alert_level, is_enabled) VALUES (?, ?, ?, ?)',
-        [botToken, chatId, alertLevel, enabled ? 1 : 0]
+        `INSERT INTO telegram_settings (bot_token, chat_id, alert_level, is_enabled) 
+         VALUES ($1, $2, $3, $4)`,
+        [botToken, chatId, alertLevel || 'warning_critical', enabled]
       );
     } else {
       // Update existing settings
       await query(
-        'UPDATE telegram_settings SET bot_token = ?, chat_id = ?, alert_level = ?, is_enabled = ?, updated_at = NOW()',
-        [botToken, chatId, alertLevel, enabled ? 1 : 0]
+        `UPDATE telegram_settings 
+         SET bot_token = $1, chat_id = $2, alert_level = $3, is_enabled = $4, updated_at = CURRENT_TIMESTAMP 
+         WHERE id = $5`,
+        [botToken, chatId, alertLevel || 'warning_critical', enabled, checkResults[0].id]
       );
     }
 
@@ -84,53 +94,171 @@ export async function PUT(request) {
   }
 }
 
+
 export async function POST(request) {
   try {
-    const { testBotToken, testChatId } = await request.json();
+    const { 
+      testBotToken, 
+      testChatId,
+      isNotification,
+      message,
+      notificationType,
+      idMlResult,
+      relatedLogId
+    } = await request.json();
 
-    // Validasi input
-    if (!testBotToken || !testChatId) {
-      return Response.json(
-        { error: 'Token bot dan chat ID harus diisi' },
-        { status: 400 }
-      );
-    }
-
-    // Test connection to Telegram Bot API
-    try {
-      const botApiUrl = `https://api.telegram.org/bot${testBotToken}/sendMessage`;
-      const response = await fetch(botApiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: testChatId,
-          text: '✅ Koneksi berhasil! Bot Telegram terhubung dengan Cortex Log.',
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!result.ok) {
-        return Response.json({
-          success: false,
-          error: result.description || 'Gagal mengirim pesan ke Telegram',
-        }, { status: 400 });
+    // Mode 1: Test Connection
+    if (!isNotification) {
+      if (!testBotToken || !testChatId) {
+        return Response.json(
+          { error: 'Token bot dan chat ID harus diisi' },
+          { status: 400 }
+        );
       }
 
-      return Response.json({
-        success: true,
-        message: 'Koneksi berhasil! Pesan uji telah dikirim.',
-      });
-    } catch (botError) {
-      return Response.json({
-        success: false,
-        error: 'Tidak dapat terhubung ke Bot Telegram. Periksa token dan chat ID.',
-      }, { status: 400 });
+      try {
+        const botApiUrl = `https://api.telegram.org/bot${testBotToken}/sendMessage`;
+        const response = await fetch(botApiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: testChatId,
+            text: '✅ Koneksi berhasil! Bot Telegram terhubung dengan Cortex Log.',
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!result.ok) {
+          return Response.json({
+            success: false,
+            error: result.description || 'Gagal mengirim pesan ke Telegram',
+          }, { status: 400 });
+        }
+
+        return Response.json({
+          success: true,
+          message: 'Koneksi berhasil! Pesan uji telah dikirim.',
+        });
+      } catch (botError) {
+        return Response.json({
+          success: false,
+          error: 'Tidak dapat terhubung ke Bot Telegram. Periksa token dan chat ID.',
+        }, { status: 400 });
+      }
+    }
+
+    // Mode 2: Send Notification
+    if (isNotification) {
+      if (!message || !notificationType || !testChatId) {
+        return Response.json(
+          { error: 'Message, notification type, dan chat ID harus diisi' },
+          { status: 400 }
+        );
+      }
+
+      // Get telegram settings dari telegram_settings table
+      const settingsResults = await query(
+        `SELECT bot_token, chat_id FROM telegram_settings 
+         ORDER BY id DESC 
+         LIMIT 1`
+      );
+
+      if (!settingsResults || settingsResults.length === 0) {
+        return Response.json(
+          { error: 'Pengaturan Telegram belum dikonfigurasi' },
+          { status: 400 }
+        );
+      }
+
+      const botToken = settingsResults[0].bot_token;
+      const chatId = testChatId || settingsResults[0].chat_id;
+
+      // 1. Insert notification ke notifications table
+      const insertResult = await query(
+        `INSERT INTO notifications (
+          id_ml_result, message, notification_type, telegram_chat_id, related_log_id, status
+        ) VALUES ($1, $2, $3, $4, $5, 'Pending')
+        RETURNING id_notification`,
+        [
+          idMlResult || null,
+          message,
+          notificationType,
+          testChatId,
+          relatedLogId || null
+        ]
+      );
+
+      const notificationId = insertResult[0]?.id_notification;
+
+      // 2. Send message to Telegram
+      try {
+        const botApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+        
+        let formattedMessage = message;
+        if (notificationType === 'Attack Alert') {
+          formattedMessage = `🚨 ATTACK ALERT\n${message}`;
+        } else if (notificationType === 'Warning') {
+          formattedMessage = `⚠️ WARNING\n${message}`;
+        } else if (notificationType === 'Info') {
+          formattedMessage = `ℹ️ INFO\n${message}`;
+        }
+
+        const response = await fetch(botApiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: formattedMessage,
+          }),
+        });
+
+        const telResult = await response.json();
+
+        // 3. Update notification status
+        let status = 'Failed';
+        if (telResult.ok) {
+          status = 'Sent';
+        }
+
+        await query(
+          'UPDATE notifications SET status = $1 WHERE id_notification = $2',
+          [status, notificationId]
+        );
+
+        return Response.json({
+          success: telResult.ok,
+          data: {
+            notificationId,
+            status,
+            message: telResult.ok 
+              ? 'Notifikasi berhasil dikirim ke Telegram' 
+              : (telResult.description || 'Gagal mengirim notifikasi'),
+          },
+        });
+      } catch (botError) {
+        await query(
+          'UPDATE notifications SET status = $1 WHERE id_notification = $2',
+          ['Failed', notificationId]
+        );
+
+        return Response.json(
+          {
+            success: false,
+            data: {
+              notificationId,
+              status: 'Failed',
+              error: 'Gagal mengirim ke Telegram Bot API',
+            },
+          },
+          { status: 400 }
+        );
+      }
     }
   } catch (error) {
-    console.error('Error testing telegram connection:', error);
+    console.error('Error in telegram POST handler:', error);
     return Response.json(
-      { error: 'Gagal menguji koneksi Telegram: ' + error.message },
+      { error: 'Gagal memproses request: ' + error.message },
       { status: 500 }
     );
   }
