@@ -1,66 +1,38 @@
-'use server';
+/**
+ * POST /api/auth/register
+ */
 
-import { query } from '@/lib/db';
-import { hashPassword, generateToken } from '@/lib/auth';
+import { registerUser } from '@/lib/services/authService';
+import { generateToken } from '@/lib/auth';
 
 export async function POST(request) {
   try {
     const { username, email, password } = await request.json();
 
-    // Validasi input
     if (!username || !email || !password) {
-      return Response.json(
-        { error: 'Username, email, dan password harus diisi' },
-        { status: 400 }
-      );
+      return Response.json({ error: 'Username, email, dan password harus diisi' }, { status: 400 });
     }
 
-    // Cek apakah username atau email sudah terdaftar
-    const existingUsers = await query(
-      'SELECT id_user FROM users WHERE username = $1 OR email = $2',
-      [username, email]
-    );
+    const newUser = await registerUser({ username, email, password });
+    
+    // Generate token untuk auto-login setelah register
+    const token = generateToken(newUser.id, newUser.email, newUser.username);
 
-    if (existingUsers.length > 0) {
-      return Response.json(
-        { error: 'Username atau email sudah terdaftar' },
-        { status: 409 }
-      );
-    }
+    return Response.json({
+      message: 'Register berhasil',
+      token,
+      user: {
+        ...newUser,
+        status: 'Aktif'
+      }
+    }, { status: 201 });
 
-    // Hash password
-    const hashedPassword = await hashPassword(password);
-
-    // Insert user baru ke database sebagai admin
-    const result = await query(
-      'INSERT INTO users (username, email, password, role, status, created_at) VALUES ($1, $2, $3, $4, $5, NOW()) RETURNING id_user',
-      [username, email, hashedPassword, 'admin', 'Aktif']
-    );
-
-    const newUserId = result[0].id_user;
-
-    // Generate token
-    const token = generateToken(newUserId, email, username);
-
-    return Response.json(
-      {
-        message: 'Register berhasil',
-        token: token,
-        user: {
-          id: newUserId,
-          username: username,
-          email: email,
-          role: 'admin',
-          status: 'Aktif',
-        },
-      },
-      { status: 201 }
-    );
   } catch (error) {
-    console.error('Register error:', error);
-    return Response.json(
-      { error: 'Terjadi kesalahan pada server' },
-      { status: 500 }
-    );
+    console.error('Register error:', error.message);
+    return Response.json({ 
+        error: error.message === 'Username atau email sudah digunakan' 
+            ? error.message 
+            : 'Terjadi kesalahan sistem'
+    }, { status: 409 });
   }
 }

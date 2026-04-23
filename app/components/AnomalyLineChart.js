@@ -23,80 +23,65 @@ export default function AnomalyLineChart({ logs, dbTimeline }) {
   }, []);
 
   const chartData = useMemo(() => {
-    // Generate time slots with 60-minute intervals
-    const now = new Date();
-    const timeSlots = {};
+    // Jika tidak ada data, tampilkan placeholder kosong
+    if (!dbTimeline || dbTimeline.length === 0) {
+      const now = new Date();
+      const placeholderCats = [];
+      for (let i = 5; i >= 0; i--) {
+        const time = new Date(now.getTime() - i * 3600000);
+        placeholderCats.push(`${String(time.getHours()).padStart(2, "0")}:00`);
+      }
+      return {
+        series: [{ name: "Normal", data: [0,0,0,0,0,0] }, { name: "Anomali", data: [0,0,0,0,0,0] }],
+        categories: placeholderCats
+      };
+    }
 
-    // Generate 6 time slots (every 60 minutes backwards)
+    // Gunakan data langsung dari DB secara dinamis
+    // Gunakan data langsung dari DB secara dinamis
     const categories = [];
-    for (let i = 5; i >= 0; i--) {
-      const time = new Date(now.getTime() - i * 60 * 60000);
-      const hours = time.getHours();
-      const timeKey = `${String(hours).padStart(2, "0")}:00`;
-      categories.push(timeKey);
-      timeSlots[timeKey] = { normal: 0, warning: 0, critical: 0 };
-    }
+    const normalData = [];
+    const anomalyData = [];
+    const timelineData = [...dbTimeline];
 
-    // Distribute logs across time slots
-    // Jika mendapat data langsung dari database
-    if (dbTimeline && dbTimeline.length > 0) {
-      dbTimeline.forEach((t) => {
-        // Asumsi time format: '2024-02-05T10:00:00.000Z'
-        const time = new Date(t.hour_bucket);
-        const hours = time.getHours();
-        const timeKey = `${String(hours).padStart(2, "0")}:00`;
-        
-        if (timeSlots[timeKey]) {
-          timeSlots[timeKey].normal = parseInt(t.normals, 10);
-          timeSlots[timeKey].critical = parseInt(t.anomalies, 10);
-        }
-      });
-    } else if (logs && logs.length > 0) {
-      // Logic lama (fallback) untuk parsing mock logs
-      logs.forEach((log, idx) => {
-        const slotIndex = Math.floor(
-          ((idx % logs.length) * categories.length) / Math.max(logs.length, 6),
-        );
-        const timeKey = categories[Math.min(slotIndex, categories.length - 1)];
+    if (timelineData.length === 0) return { series: [], categories: [] };
 
-        let level = "normal";
-        if (typeof log === "object" && log.level) {
-          level = log.level;
-        } else if (typeof log === "string") {
-          const statusMatch = log.match(/"\s+(\d{3})\s+/);
-          if (statusMatch) {
-            const statusCode = parseInt(statusMatch[1]);
-            if (statusCode >= 500 || ((statusCode >= 400) && (log.includes("injection") || log.includes("union")))) {
-              level = "critical";
-            }
-          }
-        }
+    // Calculate actual range from data
+    const firstTime = new Date(timelineData[0].time_bucket);
+    const lastTime = new Date(timelineData[timelineData.length - 1].time_bucket);
+    const diffMs = lastTime.getTime() - firstTime.getTime();
 
-        if (level === "critical") {
-          timeSlots[timeKey].critical++;
-        } else {
-          timeSlots[timeKey].normal++;
-        }
-      });
-    } else {
-      // Default jika tidak ada data
-      timeSlots[categories[0]] = { normal: 0, warning: 0, critical: 0 };
-    }
+    timelineData.forEach((t) => {
+      const date = new Date(t.time_bucket);
+      let label = "";
+      
+      if (diffMs <= 3601000) {
+        // Range <= 1 hour: Show HH:mm (Minutes)
+        label = `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+      } else if (diffMs <= 86401000) {
+        // Range <= 24 hours: Show HH:00 (Hours)
+        label = `${String(date.getHours()).padStart(2, "0")}:00`;
+      } else if (diffMs <= 86400000 * 8) {
+        // Range <= 7 days: Show DD/MM
+        label = `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}`;
+      } else {
+        // Range > 7 days: Show DD/MM
+        label = `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}`;
+      }
+      
+      categories.push(label);
+      normalData.push(parseInt(t.normals, 10));
+      anomalyData.push(parseInt(t.anomalies, 10));
+    });
 
     return {
       series: [
-        {
-          name: "Normal (Isolation Forest)",
-          data: categories.map((cat) => timeSlots[cat].normal),
-        },
-        {
-          name: "Anomali (Isolation Forest)",
-          data: categories.map((cat) => timeSlots[cat].critical),
-        },
+        { name: "Normal (Isolation Forest)", data: normalData },
+        { name: "Anomali (Isolation Forest)", data: anomalyData },
       ],
       categories,
     };
-  }, [logs, dbTimeline]);
+  }, [dbTimeline]);
 
   const options = {
     chart: {
@@ -104,9 +89,6 @@ export default function AnomalyLineChart({ logs, dbTimeline }) {
       stacked: false,
       toolbar: {
         show: false,
-      },
-      sparkline: {
-        enabled: false,
       },
       animations: {
         enabled: true,
@@ -121,6 +103,13 @@ export default function AnomalyLineChart({ logs, dbTimeline }) {
       curve: "smooth",
       width: 2,
     },
+    markers: {
+      size: 4,
+      strokeWidth: 2,
+      hover: {
+        size: 6,
+      }
+    },
     fill: {
       type: "gradient",
       gradient: {
@@ -130,10 +119,14 @@ export default function AnomalyLineChart({ logs, dbTimeline }) {
     },
     xaxis: {
       categories: chartData.categories,
+      tickAmount: 10,
       labels: {
+        rotate: -45,
+        rotateAlways: false,
+        hideOverlappingLabels: true,
         style: {
           colors: "#94a3b8",
-          fontSize: "12px",
+          fontSize: "10px",
         },
       },
       axisBorder: {
@@ -144,6 +137,8 @@ export default function AnomalyLineChart({ logs, dbTimeline }) {
       },
     },
     yaxis: {
+      forceNiceScale: true,
+      min: 0,
       labels: {
         style: {
           colors: "#94a3b8",

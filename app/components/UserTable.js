@@ -50,94 +50,91 @@ export default function UserTable({ users, onEdit, onResetPassword, onDelete }) 
         <table className="w-full text-sm" role="table">
           <caption className="sr-only">Daftar pengguna terdaftar</caption>
           <thead>
-            <tr className="bg-slate-900 border-b border-slate-700">
-              <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-300">Profil Pengguna</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-300">Nama Lengkap</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-300">Peran</th>
-              <th scope="col" className="px-6 py-3 text-center text-xs font-semibold text-slate-300">Status</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-300">Login Terakhir</th>
-              <th scope="col" className="px-6 py-3 text-center text-xs font-semibold text-slate-300">Tindakan</th>
+            <tr className="bg-slate-900/50 border-b border-slate-800">
+              <th scope="col" className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-500">Profil Pengguna</th>
+              <th scope="col" className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-500">Nama Lengkap</th>
+              <th scope="col" className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-500">Peran</th>
+              <th scope="col" className="px-6 py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-500">Status</th>
+              <th scope="col" className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-500">Login Terakhir</th>
+              <th scope="col" className="px-6 py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-500">Tindakan</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-800/50">
             {users.map((user, idx) => (
               <tr
                 key={user.id}
-                className={`border-b border-slate-700 transition ${
-                  idx % 2 === 0 ? 'bg-slate-950' : 'bg-slate-900/50'
-                } hover:bg-slate-800`}
+                className="hover:bg-slate-900/40 transition-colors group"
               >
                 {/* User Profile */}
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 align-middle">
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                      className="w-9 h-9 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-lg shadow-blue-900/20"
                       aria-hidden="true"
                     >
                       {user.username.charAt(0).toUpperCase()}
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-white">{user.username}</p>
-                      <p className="text-xs text-slate-500">{user.email}</p>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">{user.username}</span>
+                      <span className="text-[11px] text-slate-500 font-medium">{user.email}</span>
                     </div>
                   </div>
                 </td>
 
                 {/* Full Name */}
-                <td className="px-6 py-4 text-slate-300 text-sm">{user.fullName}</td>
+                <td className="px-6 py-4 align-middle">
+                  <span className="text-sm text-slate-300 font-medium">{user.fullName || "-"}</span>
+                </td>
 
                 {/* Role */}
-                <td className="px-6 py-4">
-                  <span className={`text-xs font-semibold px-3 py-1 rounded-lg inline-flex items-center ${getRoleBadgeStyle(user.role)}`}>
+                <td className="px-6 py-4 align-middle">
+                  <span className={`text-[10px] font-bold px-2.5 py-1 rounded-md inline-flex items-center gap-1.5 uppercase tracking-wide ${getRoleBadgeStyle(user.role)}`}>
                     {getRoleIcon(user.role)}
                     {getRoleLabel(user.role)}
                   </span>
                 </td>
 
                 {/* Status */}
-                <td className="px-6 py-4 text-center">
+                <td className="px-6 py-4 align-middle">
                   <div className="flex items-center justify-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${user.status === 'active' ? 'bg-green-400' : 'bg-red-400'}`} aria-hidden="true"></span>
-                    <span className={`text-xs font-semibold ${getStatusColor(user.status)}`}>
-                      {user.status === 'active' ? 'Aktif' : 'Ditangguhkan'}
+                    <div className={`w-1.5 h-1.5 rounded-full ${user.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} aria-hidden="true"></div>
+                    <span className={`text-[11px] font-bold uppercase tracking-tight ${getStatusColor(user.status)}`}>
+                      {user.status === 'active' ? 'Aktif' : 'Nonaktif'}
                     </span>
                   </div>
                 </td>
 
                 {/* Last Login */}
-                <td className="px-6 py-4 text-xs text-slate-400">
-                  <div>
-                    <p className="font-semibold text-slate-300">{user.lastLogin}</p>
-                    <p className="text-slate-500">{user.lastLoginIP}</p>
+                <td className="px-6 py-4 align-middle">
+                  <div className="flex flex-col">
+                    <span className="text-sm text-slate-300 font-medium">{user.lastLogin || "Belum Pernah"}</span>
+                    <span className="text-[10px] text-slate-500 font-mono tracking-tight">{user.lastLoginIP}</span>
                   </div>
                 </td>
 
-                {/* Actions - bigger touch targets */}
-                <td className="px-6 py-4 text-center">
+                {/* Actions */}
+                <td className="px-6 py-4 align-middle">
                   <div className="flex items-center justify-center gap-2">
                     <button
                       onClick={() => onEdit(user)}
-                      className="px-3 py-2.5 text-xs font-semibold bg-blue-600/10 text-blue-400 border border-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition inline-flex items-center gap-1.5"
-                      aria-label={`Edit pengguna ${user.username}`}
+                      className="p-2 text-slate-400 hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all border border-transparent hover:border-blue-400/30"
+                      title="Edit Pengguna"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                      Edit
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     </button>
                     <button
                       onClick={() => onResetPassword(user.id, user.username)}
-                      className="px-3 py-2.5 text-xs font-semibold bg-amber-600/10 text-amber-400 border border-amber-600 rounded-lg hover:bg-amber-600 hover:text-white transition inline-flex items-center gap-1.5"
-                      aria-label={`Reset sandi ${user.username}`}
+                      className="p-2 text-slate-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-all border border-transparent hover:border-amber-400/30"
+                      title="Reset Password"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
-                      Reset
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
                     </button>
                     <button
                       onClick={() => onDelete(user.id, user.username)}
-                      className="px-3 py-2.5 text-xs font-semibold bg-red-600/10 text-red-400 border border-red-600 rounded-lg hover:bg-red-600 hover:text-white transition inline-flex items-center gap-1.5"
-                      aria-label={`Hapus pengguna ${user.username}`}
+                      className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all border border-transparent hover:border-red-400/30"
+                      title="Hapus Pengguna"
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      Hapus
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                   </div>
                 </td>

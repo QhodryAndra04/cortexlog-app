@@ -10,11 +10,20 @@ class LogEntry(BaseModel):
     user_agent:     Optional[str]   = Field("",    description="User-Agent string")
     timestamp:      Optional[str]   = Field(None,  description="Timestamp (dd/Mon/YYYY:HH:MM:SS)")
     referer:        Optional[str]   = Field(None,  description="Referer header")
-    # IP-aggregation features (opsional)
-    request_count:  int             = Field(1,     description="Total request dari IP ini")
-    error_count:    int             = Field(0,     description="Jumlah error 5xx dari IP ini")
-    login_attempts: int             = Field(0,     description="Upaya login dari IP ini")
-    failed_auth:    int             = Field(0,     description="Gagal auth (401/403) dari IP ini")
+    
+    # --- Advanced Behavioral Metrics (Sync with 22-feature set) ---
+    request_count:       int   = Field(1,   description="Total request dari IP ini")
+    request_rate:        float = Field(0.0, description="Requests per second")
+    error_count:         int   = Field(0,   description="Jumlah error server (5xx) dari IP ini")
+    status_4xx_count:    int   = Field(0,   description="Jumlah client error (4xx) dari IP ini")
+    status_5xx_count:    int   = Field(0,   description="Jumlah server error (5xx) dari IP ini")
+    login_request_count: int   = Field(0,   description="Upaya login dari IP ini")
+    failed_login_count:  int   = Field(0,   description="Gagal login dari IP ini")
+    failed_login_ratio:  float = Field(0.0, description="Rasio gagal login")
+    session_duration:    float = Field(0.0, description="Durasi sesi dalam detik")
+    avg_interval:        float = Field(0.0, description="Rata-rata interval antar request")
+    std_interval:        float = Field(0.0, description="Standar deviasi interval")
+    unique_ua_count:     int   = Field(1,   description="Jumlah User-Agent unik dari IP ini")
 
     model_config = {
         "json_schema_extra": {
@@ -27,9 +36,9 @@ class LogEntry(BaseModel):
                 "user_agent":    "Mozilla/5.0",
                 "timestamp":     "15/Apr/2026:10:30:00",
                 "request_count": 150,
-                "failed_auth":   80,
-                "login_attempts":45,
-                "error_count":   5,
+                "failed_login_count": 80,
+                "login_request_count": 85,
+                "request_rate": 2.5
             }
         }
     }

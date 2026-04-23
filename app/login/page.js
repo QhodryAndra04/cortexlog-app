@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginUser } from "@/lib/api";
+import { showSuccess, showError } from "@/lib/swal";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,16 +37,16 @@ export default function LoginPage() {
       const data = await loginUser(username, password);
 
       if (data.token && data.user) {
-        setError("");
         setIsLoading(false);
+        showSuccess(`Selamat datang kembali, ${data.user.username}!`);
         // Redirect ke dashboard setelah login berhasil
         router.push("/dashboard");
       } else {
-        setError("Login gagal: Token atau user info tidak ditemukan");
+        showError("Login Gagal", "Token atau informasi pengguna tidak ditemukan");
         setIsLoading(false);
       }
     } catch (err) {
-      setError(err.message || "Login gagal, silakan coba lagi");
+      showError("Login Gagal", err.message || "Silakan periksa kredensial Anda");
       setIsLoading(false);
     }
   };
@@ -112,32 +113,7 @@ export default function LoginPage() {
             </p>
 
             {/* Divider */}
-            <div className="h-px mb-6 bg-slate-600/50"></div>
-
-            {/* Error Message */}
-            {error && (
-              <div
-                className="mb-4 p-3 rounded-lg flex items-start gap-2 bg-red-600/15 border-l-3 border-l-red-500"
-                role="alert"
-                aria-live="assertive"
-              >
-                <svg
-                  className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-                  />
-                </svg>
-                <p className="text-sm text-red-400">{error}</p>
-              </div>
-            )}
+            <div className="h-px mb-8 bg-slate-600/50"></div>
 
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-4">

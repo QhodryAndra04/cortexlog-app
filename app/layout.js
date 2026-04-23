@@ -22,6 +22,7 @@ export default function RootLayout({ children }) {
     <html lang="id" className="h-screen w-screen overflow-hidden">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen w-screen m-0 p-0 overflow-hidden`}
+        suppressHydrationWarning
       >
         <a
           href="#main-content"

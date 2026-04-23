@@ -6,19 +6,22 @@ prediksi Machine Learning dipisahkan ke dalam modul khusus untuk menjaga
 keterbacaan dan kebersihan kode.
 """
 
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from .schemas import LogEntry, BatchLogEntry
 from .ml_services import load_models, check_models_health, MLPredictionService
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Eksekusi saat startup
     load_models()
     yield
-    # Eksekusi saat shutdown (jika ada resources yg mau dibersihkan)
 
 app = FastAPI(
     title="CortexLog Detection API",
@@ -30,9 +33,12 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Ambil origins dari .env, default ke '*' jika tidak ada
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -97,3 +103,9 @@ def batch_random_forest(batch: BatchLogEntry):
     if not MLPredictionService.is_rf_ready():
         raise HTTPException(status_code=503, detail="Model Random Forest belum siap.")
     return MLPredictionService.batch_random_forest(batch)
+
+@app.post("/predict/batch/combined", tags=["Batch"])
+def batch_combined(batch: BatchLogEntry):
+    # Convert list of LogEntry models to list of dicts
+    logs_dicts = [log.model_dump() for log in batch.logs]
+    return MLPredictionService.batch_predict_combined(logs_dicts)

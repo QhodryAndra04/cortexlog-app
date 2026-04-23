@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import ConfirmationDialog from "./ConfirmationDialog";
+import { showSuccess, showError, confirmAction } from "@/lib/swal";
 
 export default function TelegramSettings({ onClose }) {
   const [settings, setSettings] = useState({
@@ -14,10 +14,8 @@ export default function TelegramSettings({ onClose }) {
   const [loading, setLoading] = useState(true);
   const [showToken, setShowToken] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
-  const [testResult, setTestResult] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [testDialog, setTestDialog] = useState(false);
   const modalRef = useRef(null);
 
   // Escape key handler & focus trap
@@ -102,27 +100,33 @@ export default function TelegramSettings({ onClose }) {
         }),
       });
 
-      const result = await response.json();
-
-      if (result.success) {
-        setTestResult({
-          success: true,
-          message: "Pengaturan tersimpan",
-        });
-        setTimeout(() => setTestResult(null), 3000);
+      const data = await res.json();
+      if (data.success) {
+        showSuccess("Pengaturan tersimpan");
       } else {
-        setError(result.error || "Gagal menyimpan pengaturan");
+        showError("Gagal Menyimpan", data.error || "Terjadi kesalahan saat menyimpan pengaturan");
       }
     } catch (err) {
-      setError("Error menyimpan pengaturan: " + err.message);
+      showError("Kesalahan", err.message);
     } finally {
       setSaving(false);
     }
   };
 
+  const handleTestTrigger = async () => {
+    const confirmed = await confirmAction(
+      "Uji Koneksi Telegram",
+      "Kirim pesan uji ke chat Telegram Anda?",
+      "Ya, Kirim"
+    );
+
+    if (confirmed) {
+      handleTestConnection();
+    }
+  };
+
   const handleTestConnection = async () => {
     setTestingConnection(true);
-    setTestResult(null);
 
     try {
       const response = await fetch("/api/telegram-settings", {
@@ -137,19 +141,14 @@ export default function TelegramSettings({ onClose }) {
       const result = await response.json();
       setTestingConnection(false);
 
-      setTestResult({
-        success: result.success,
-        message: result.message || result.error,
-      });
-
-      setTestDialog(false);
-      setTimeout(() => setTestResult(null), 5000);
+      if (result.success) {
+        showSuccess(result.message || "Koneksi berhasil! Periksa bot Anda.");
+      } else {
+        showError("Tes Koneksi Gagal", result.error || "Gagal menghubungi bot Telegram");
+      }
     } catch (err) {
       setTestingConnection(false);
-      setTestResult({
-        success: false,
-        message: "Error menghubungi API: " + err.message,
-      });
+      showError("Kesalahan Sistem", err.message);
     }
   };
 
@@ -317,43 +316,17 @@ export default function TelegramSettings({ onClose }) {
                   ) : "Simpan Pengaturan"}
                 </button>
                 <button
-                  onClick={() => setTestDialog(true)}
+                  onClick={handleTestTrigger}
                   disabled={testingConnection}
                   className="px-6 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-green-500/40"
                 >
-                  Uji Koneksi
+                  {testingConnection ? "Menguji..." : "Uji Koneksi"}
                 </button>
-                {testResult && (
-                  <div
-                    className={`flex items-center gap-2 text-sm ${testResult.success ? "text-green-400" : "text-red-400"}`}
-                    role="status"
-                    aria-live="polite"
-                  >
-                    {testResult.success ? (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                    ) : (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    )}
-                    <span>{testResult.message}</span>
-                  </div>
-                )}
               </div>
             </>
           )}
         </div>
       </div>
-
-      {/* Test Connection Dialog */}
-      <ConfirmationDialog
-        isOpen={testDialog}
-        title="Uji Koneksi Telegram"
-        message="Kirim pesan uji ke chat Telegram? Ini akan memverifikasi token bot dan ID chat sudah benar."
-        onConfirm={handleTestConnection}
-        onCancel={() => setTestDialog(false)}
-        isDanger={false}
-        confirmText={testingConnection ? "Menguji..." : "Kirim Pesan Uji"}
-        confirmDisabled={testingConnection}
-      />
     </div>
   );
 }

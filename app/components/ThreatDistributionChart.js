@@ -24,43 +24,11 @@ export default function ThreatDistributionChart({ alerts = [], alertDist = null 
       };
     }
 
-    if (!alerts || alerts.length === 0) {
-      return {
-        series: [45, 25, 20, 10],
-        labels: ["SQL Injection", "XSS", "Brute Force", "Others"],
-      };
-    }
-    const threatTypes = ['SQL Injection', 'XSS', 'Brute Force', 'DOS'];
-    const threatMap = {
-      'SQL Injection': 0,
-      'XSS': 0,
-      'Brute Force': 0,
-      'DOS': 0,
-    };
-
-    if (alerts && alerts.length > 0) {
-      alerts.forEach(alert => {
-        const type = alert.attackType || 'DOS';
-        if (threatMap.hasOwnProperty(type)) {
-          threatMap[type]++;
-        } else {
-          // Map unknown types to DOS or adjust as needed
-          threatMap['DOS']++;
-        }
-      });
-    } else {
-      // Default values when no alerts
-      threatMap['SQL Injection'] = 25;
-      threatMap['Brute Force'] = 20;
-      threatMap['XSS'] = 30;
-      threatMap['DOS'] = 25;
-    }
-
     return {
-      series: Object.values(threatMap),
-      labels: threatTypes,
+      series: [],
+      labels: [],
     };
-  }, [alerts]);
+  }, [alertDist]);
 
   const options = {
     chart: {
@@ -73,7 +41,7 @@ export default function ThreatDistributionChart({ alerts = [], alertDist = null 
         speed: 800,
       },
     },
-    colors: ['#ef4444', '#f59e0b', '#8b5cf6', '#06b6d4'],
+    colors: ['#ef4444', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#6366f1', '#10b981'],
     plotOptions: {
       pie: {
         donut: {

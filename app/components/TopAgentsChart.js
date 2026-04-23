@@ -26,8 +26,8 @@ export default function TopAgentsChart({ logs = [], agents = null }) {
 
     // Default jika tidak ada data dari props agents
     return {
-      series: [45, 32, 28, 15, 12],
-      labels: ["Windows", "macOS", "Linux", "iOS", "Android"],
+      series: [],
+      labels: [],
     };
   }, [agents, logs]);
 
