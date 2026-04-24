@@ -76,8 +76,8 @@ export default function AnomalyLineChart({ logs, dbTimeline }) {
 
     return {
       series: [
-        { name: "Normal (Isolation Forest)", data: normalData },
-        { name: "Anomali (Isolation Forest)", data: anomalyData },
+        { name: "Normal", data: normalData },
+        { name: "Anomali", data: anomalyData },
       ],
       categories,
     };
